@@ -1,0 +1,281 @@
+[
+  {
+    "step": "Read and analyze backend dependencies and structure (Spring Boot)",
+    "sub_steps": [
+      "Open /home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/pom.xml and review the dependencies: web, data-jpa, validation, mysql, lombok.",
+      "Check database configuration in /home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/main/resources/application.properties to ensure MySQL is used.",
+      "Review the structure under src/main/java/com/examly/springapp/ for the entry point and prepare locations for entity, repository, service, and controller classes."
+    ],
+    "files_to_add": [],
+    "files_to_edit": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/pom.xml",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/main/resources/application.properties",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/main/java/com/examly/springapp/CustomerSupportTicketManagementSystemApplication.java"
+    ],
+    "description": "Establish a solid understanding of the backend dependencies, configuration, and directory structure. This informs the placement and implementation of entity, repository, service, controller, and configuration files."
+  },
+  {
+    "step": "Implement Ticket and Response Entity classes with JPA validation",
+    "sub_steps": [
+      "Create Ticket and Response entity classes with fields, validation annotations, and enum types for status and priority.",
+      "Implement the one-to-many and many-to-one relationships.",
+      "Use Lombok (@Getter, @Setter, @NoArgsConstructor, @AllArgsConstructor, @Builder) to streamline boilerplate.",
+      "Ensure field constraints match requirements (lengths, not-null, etc.).",
+      "Ensure enums use @Enumerated(EnumType.STRING) for database clarity and easy readability.",
+      "Place these classes in com.examly.springapp.model."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/main/java/com/examly/springapp/model/Ticket.java",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/main/java/com/examly/springapp/model/Response.java"
+    ],
+    "files_to_edit": [],
+    "description": "Provides the core data model for the backend, with all relationships, fields, and validation, ensuring data integrity and supporting further service and repository development."
+  },
+  {
+    "step": "Create JPA repository interfaces for Ticket and Response",
+    "sub_steps": [
+      "Create TicketRepository and ResponseRepository interfaces extending JpaRepository for CRUD operations.",
+      "Place these in com.examly.springapp.repository."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/main/java/com/examly/springapp/repository/TicketRepository.java",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/main/java/com/examly/springapp/repository/ResponseRepository.java"
+    ],
+    "files_to_edit": [],
+    "description": "Enables data persistence and retrieval, facilitates service layer logic and testing, and supports efficient access patterns for tickets and responses."
+  },
+  {
+    "step": "Implement Service layer for ticket and response management",
+    "sub_steps": [
+      "Create TicketService and ResponseService classes with methods for CRUD operations and business logic: creating tickets, updating statuses, adding responses (with status auto-update logic), fetching ticket details, and fetching responses.",
+      "Handle ticket status transitions on response addition.",
+      "Place services in com.examly.springapp.service.",
+      "Utilize validation and exception throwing for error scenarios."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/main/java/com/examly/springapp/service/TicketService.java",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/main/java/com/examly/springapp/service/ResponseService.java"
+    ],
+    "files_to_edit": [],
+    "description": "Centralizes business rules, logic, and error handling for ticket lifecycle and communication, used by controllers for REST endpoint implementation."
+  },
+  {
+    "step": "Implement DTOs (Data Transfer Objects) for request/response payloads",
+    "sub_steps": [
+      "Create DTO classes for creating/updating ticket and response and for returning detailed ticket object with its associated responses.",
+      "Map validation annotations (@NotNull, @Size, etc.) on DTOs for input validation.",
+      "Place DTOs in com.examly.springapp.dto."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/main/java/com/examly/springapp/dto/TicketRequestDto.java",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/main/java/com/examly/springapp/dto/TicketStatusUpdateDto.java",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/main/java/com/examly/springapp/dto/ResponseRequestDto.java"
+    ],
+    "files_to_edit": [],
+    "description": "Strictly separates API-facing payload validation from the domain entities, enables fine-grained validation and simplifies controller logic for clean API handling."
+  },
+  {
+    "step": "Implement REST controllers for Ticket and Response management",
+    "sub_steps": [
+      "Create TicketController to handle POST /api/tickets, GET /api/tickets, GET /api/tickets/{id}, PATCH /api/tickets/{id}/status.",
+      "Create ResponseController or add ticket responses endpoints under TicketController for POST /api/tickets/{ticketId}/responses and GET /api/tickets/{ticketId}/responses.",
+      "Use appropriate request/response DTOs, validation, error status codes, and map service exceptions to REST responses.",
+      "Place controllers in com.examly.springapp.controller."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/main/java/com/examly/springapp/controller/TicketController.java"
+    ],
+    "files_to_edit": [],
+    "description": "Exposes the application's core functionality through easily consumable and well-validated REST API endpoints as detailed in the requirements."
+  },
+  {
+    "step": "Implement global exception handling and error response structure",
+    "sub_steps": [
+      "Create GlobalExceptionHandler class with @ControllerAdvice to convert validation errors, entity-not-found, and illegal-argument exceptions to appropriate HTTP responses (400, 404, etc.) and error messages.",
+      "Provide structured error body for frontend and test case requirements."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/main/java/com/examly/springapp/exception/GlobalExceptionHandler.java"
+    ],
+    "files_to_edit": [],
+    "description": "Ensures API errors are returned in a consistent, testable, user-friendly way and satisfy error handling requirements for both backend and frontend."
+  },
+  {
+    "step": "Configure CORS for frontend-backend integration",
+    "sub_steps": [
+      "Update CORS configuration globally to allow requests from frontend origin (likely http://localhost:3000).",
+      "Implement this configuration in a WebConfig class or in the TicketController with @CrossOrigin.",
+      "Place config in com.examly.springapp.config or similar."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/main/java/com/examly/springapp/config/WebConfig.java"
+    ],
+    "files_to_edit": [],
+    "description": "Allows seamless integration between React frontend and Spring Boot backend by permitting cross-origin API calls."
+  },
+  {
+    "step": "Implement all provided backend test cases (JUnit: Ticket and Response endpoints)",
+    "sub_steps": [
+      "Create/Modify test files as per provided test cases:",
+      " - ticketCreationTest: Test POST /api/tickets endpoint (valid and invalid creation).",
+      " - ticketValidationTest: Test invalid ticket creation scenarios.",
+      " - ticketStatusUpdateTest: Test PATCH /api/tickets/{id}/status (valid/invalid statuses and IDs).",
+      " - responseCreationTest: Test POST /api/tickets/{ticketId}/responses endpoint (creation and status auto-update).",
+      " - ticketWithResponsesTest: Test GET /api/tickets/{id} for retrieval with response array.",
+      "Mock repositories/services as necessary, use @SpringBootTest and MockMvc for integration.",
+      "Ensure all positive/negative scenarios are covered with assertions on returned codes and JSON.",
+      "NO additional/manual test cases outside those provided.",
+      "NO manual cleanup() calls, follow Spring JUnit conventions."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/test/java/com/examly/springapp/controller/TicketControllerTest.java"
+    ],
+    "files_to_edit": [],
+    "description": "Implements all required backend tests corresponding to the functional requirements and validates contract compliance. Ensures code correctness and covers all endpoint behaviors."
+  },
+  {
+    "step": "Compile and run backend tests (Maven)",
+    "sub_steps": [
+      "Run mvn clean compile -q -Dspring.main.banner-mode=off in the backend directory to check for compilation errors.",
+      "Run mvn test -q -Dspring.main.banner-mode=off to execute all provided unit/integration tests.",
+      "Run mvn clean install -q -Dspring.main.banner-mode=off to build the package if compilation and tests succeed."
+    ],
+    "files_to_add": [],
+    "files_to_edit": [],
+    "description": "Validates the backend codebase for syntax and logic correctness. Ensures all functionality meets the requirements and passes all provided JUnit test cases."
+  },
+  {
+    "step": "Read and analyze frontend dependencies and structure (React)",
+    "sub_steps": [
+      "Open /home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/package.json and review dependencies (react, react-dom, react-router-dom, etc.).",
+      "Review /home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/ for current structure (App.js, index.js, etc.), and plan for components directory.",
+      "Check test structure and naming conventions required by provided test cases."
+    ],
+    "files_to_add": [],
+    "files_to_edit": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/package.json",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/App.js"
+    ],
+    "description": "Lays the groundwork for building frontend components by ensuring package dependencies and project structure are well understood."
+  },
+  {
+    "step": "Implement API integration utilities and constants (React)",
+    "sub_steps": [
+      "Create src/utils/api.js for all backend API calls (getTickets, getTicketById, createTicket, updateTicketStatus, addResponse, getResponsesForTicket).",
+      "Create src/utils/constants.js for enums, API endpoint roots, status colors, etc.",
+      "Ensure all API calls use fetch or axios, proper error and loading handling, and BASE_URL = http://localhost:8080."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/utils/api.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/utils/constants.js"
+    ],
+    "files_to_edit": [],
+    "description": "Centralizes API interaction, error handling, and constant definitions for easy reuse, maintainability, and robust communication with the backend."
+  },
+  {
+    "step": "Implement TicketList component with sorting and navigation",
+    "sub_steps": [
+      "Create src/components/TicketList.js to display all ticket properties with required color-coding (status), sorting (by date, priority), and clickable navigation to detail.",
+      "Create TicketList.test.js with test cases: ticketListRendering, ticketSorting.",
+      "Use CSS modules or App.css, and ensure visually distinct status styles per requirements.",
+      "Integrate loading and error states with user-friendly messages."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/TicketList.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/TicketList.test.js"
+    ],
+    "files_to_edit": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/App.css"
+    ],
+    "description": "Implements ticket browsing, required data presentation, sorting, and navigation entry. Satisfies corresponding test cases and core interface requirements."
+  },
+  {
+    "step": "Implement TicketDetail component with response list, add response form, and status dropdown",
+    "sub_steps": [
+      "Create src/components/TicketDetail.js for detailed ticket display, response list with newest first sorting, and response form (message, respondedBy).",
+      "Provide a dropdown for status update (OPEN, IN_PROGRESS, etc.) and wire up status change API.",
+      "Display API errors and loading states, and use proper formatting for dates.",
+      "Create TicketDetail.test.js with test case: ticketDetailRendering."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/TicketDetail.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/TicketDetail.test.js"
+    ],
+    "files_to_edit": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/App.css"
+    ],
+    "description": "Handles the core of ticket-responses interaction, including all detailed views, data edits, validations, and integration with the backend for response and status operations."
+  },
+  {
+    "step": "Implement CreateTicket component with validation, errors, and navigation",
+    "sub_steps": [
+      "Create src/components/CreateTicket.js for the new ticket form, following all field and content length validation requirements.",
+      "Add error state for each field and general API submission errors.",
+      "Redirect to ticket list upon success.",
+      "Create CreateTicket.test.js with test case: ticketCreationForm.",
+      "Ensure form visually matches required style guidelines."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/CreateTicket.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/CreateTicket.test.js"
+    ],
+    "files_to_edit": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/App.css"
+    ],
+    "description": "Implements input, validation, user feedback, and navigation logic for ticket creation, covering all acceptance and error edge cases."
+  },
+  {
+    "step": "Add routing and integrate all components in App.js",
+    "sub_steps": [
+      "Set up react-router-dom routes: '/', '/tickets/new', '/tickets/:id'.",
+      "Add navigation links between ticket list, create, and detail views.",
+      "Ensure App.js renders correct views for each route and integrates error/loading state passing.",
+      "Update styles as needed.",
+      "Ensure accessibility and consistent layout."
+    ],
+    "files_to_add": [],
+    "files_to_edit": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/App.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/App.css"
+    ],
+    "description": "Binds the application together, enabling smooth navigation and component integration required for end-to-end use flows."
+  },
+  {
+    "step": "Implement all provided frontend test cases (Jest/RTL: Tickets, components, and API calls)",
+    "sub_steps": [
+      "Implement the following test cases in appropriate .test.js files as specified above:",
+      " - ticketListRendering (TicketList.test.js)",
+      " - ticketSorting (TicketList.test.js)",
+      " - ticketDetailRendering (TicketDetail.test.js)",
+      " - ticketCreationForm (CreateTicket.test.js)",
+      " - apiIntegration (utils/api.test.js or spread across related component test files)",
+      "Use mocking (jest.fn(), global.fetch, etc.) for API calls and simulate all testable user interactions.",
+      "Ensure tests match selectors and validation error text as tests will check for these precisely.",
+      "NO manual cleanup(), only automatic cleanup in RTL.",
+      "Cover both positive and negative scenarios as described in JSON.",
+      "Test rendering, interactions, validation, API integration, loading, and error states."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/TicketList.test.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/TicketDetail.test.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/CreateTicket.test.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/utils/api.test.js"
+    ],
+    "files_to_edit": [],
+    "description": "Ensures test coverage for all implemented frontend components and utilities, in accordance with provided requirements and test case descriptions. Maintains exact naming, selectors, and error handling per spec."
+  },
+  {
+    "step": "Compile and run frontend build and tests (React/Jest)",
+    "sub_steps": [
+      "Run npm install in the frontend directory to install dependencies.",
+      "Run npm run build to check for build errors.",
+      "Run npx eslint src/ --fix to lint and auto-fix code issues.",
+      "Run npm run test:ci to execute all provided test cases.",
+      "Validate passing tests and check for errors.",
+      "NO use of npm test -- --ci --coverage. NO blocking commands."
+    ],
+    "files_to_add": [],
+    "files_to_edit": [],
+    "description": "Validates the frontend implementation. Ensures all code builds, passes linting, and meets the provided Jest/RTL test requirements."
+  }
+]

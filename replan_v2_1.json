@@ -1,0 +1,164 @@
+[
+  {
+    "step": "Implement all provided backend test cases (JUnit: Ticket and Response endpoints) in smaller, focused steps to avoid recursion/call-depth issues",
+    "sub_steps": [
+      "Split the backend test implementation into the following atomic tasks for manageable execution:",
+      "1. Implement test for ticket creation (ticketCreationTest) in TicketControllerTest.java.",
+      "2. Implement test for ticket validation errors (ticketValidationTest) in TicketControllerTest.java.",
+      "3. Implement test for ticket status update (ticketStatusUpdateTest) in TicketControllerTest.java.",
+      "4. Implement test for response creation and its effect on ticket status (responseCreationTest) in TicketControllerTest.java.",
+      "5. Implement test for ticket retrieval with responses (ticketWithResponsesTest) in TicketControllerTest.java.",
+      "Ensure that each test method is isolated and well-scoped, does not introduce long call chains, and that no recursive logic exists in test setup or the controller/service layer. Follow Spring JUnit conventions with @SpringBootTest and MockMvc for endpoint testing."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/springapp/src/test/java/com/examly/springapp/controller/TicketControllerTest.java"
+    ],
+    "files_to_edit": [],
+    "description": "Prevents recursion/call-depth overflows by dividing large monolithic test-step into atomic, low-complexity unit test tasks, allowing the agent to execute each part sequentially and maintain manageable depth."
+  },
+  {
+    "step": "Compile and run backend tests (Maven)",
+    "sub_steps": [
+      "Run mvn clean compile -q -Dspring.main.banner-mode=off in the backend directory to check for compilation errors.",
+      "Run mvn test -q -Dspring.main.banner-mode=off to execute all provided unit/integration tests.",
+      "Run mvn clean install -q -Dspring.main.banner-mode=off to build the package if compilation and tests succeed."
+    ],
+    "files_to_add": [],
+    "files_to_edit": [],
+    "description": "Validates the backend codebase for syntax and logic correctness. Ensures all functionality meets the requirements and passes all provided JUnit test cases."
+  },
+  {
+    "step": "Read and analyze frontend dependencies and structure (React)",
+    "sub_steps": [
+      "Open /home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/package.json and review dependencies (react, react-dom, react-router-dom, etc.).",
+      "Review /home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/ for current structure (App.js, index.js, etc.), and plan for components directory.",
+      "Check test structure and naming conventions required by provided test cases."
+    ],
+    "files_to_add": [],
+    "files_to_edit": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/package.json",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/App.js"
+    ],
+    "description": "Lays the groundwork for building frontend components by ensuring package dependencies and project structure are well understood."
+  },
+  {
+    "step": "Implement API integration utilities and constants (React)",
+    "sub_steps": [
+      "Create src/utils/api.js for all backend API calls (getTickets, getTicketById, createTicket, updateTicketStatus, addResponse, getResponsesForTicket).",
+      "Create src/utils/constants.js for enums, API endpoint roots, status colors, etc.",
+      "Ensure all API calls use fetch or axios, proper error and loading handling, and BASE_URL = http://localhost:8080."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/utils/api.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/utils/constants.js"
+    ],
+    "files_to_edit": [],
+    "description": "Centralizes API interaction, error handling, and constant definitions for easy reuse, maintainability, and robust communication with the backend."
+  },
+  {
+    "step": "Implement TicketList component with sorting and navigation",
+    "sub_steps": [
+      "Create src/components/TicketList.js to display all ticket properties with required color-coding (status), sorting (by date, priority), and clickable navigation to detail.",
+      "Create TicketList.test.js with test cases: ticketListRendering, ticketSorting.",
+      "Use CSS modules or App.css, and ensure visually distinct status styles per requirements.",
+      "Integrate loading and error states with user-friendly messages."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/TicketList.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/TicketList.test.js"
+    ],
+    "files_to_edit": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/App.css"
+    ],
+    "description": "Implements ticket browsing, required data presentation, sorting, and navigation entry. Satisfies corresponding test cases and core interface requirements."
+  },
+  {
+    "step": "Implement TicketDetail component with response list, add response form, and status dropdown",
+    "sub_steps": [
+      "Create src/components/TicketDetail.js for detailed ticket display, response list with newest first sorting, and response form (message, respondedBy).",
+      "Provide a dropdown for status update (OPEN, IN_PROGRESS, etc.) and wire up status change API.",
+      "Display API errors and loading states, and use proper formatting for dates.",
+      "Create TicketDetail.test.js with test case: ticketDetailRendering."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/TicketDetail.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/TicketDetail.test.js"
+    ],
+    "files_to_edit": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/App.css"
+    ],
+    "description": "Handles the core of ticket-responses interaction, including all detailed views, data edits, validations, and integration with the backend for response and status operations."
+  },
+  {
+    "step": "Implement CreateTicket component with validation, errors, and navigation",
+    "sub_steps": [
+      "Create src/components/CreateTicket.js for the new ticket form, following all field and content length validation requirements.",
+      "Add error state for each field and general API submission errors.",
+      "Redirect to ticket list upon success.",
+      "Create CreateTicket.test.js with test case: ticketCreationForm.",
+      "Ensure form visually matches required style guidelines."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/CreateTicket.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/CreateTicket.test.js"
+    ],
+    "files_to_edit": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/App.css"
+    ],
+    "description": "Implements input, validation, user feedback, and navigation logic for ticket creation, covering all acceptance and error edge cases."
+  },
+  {
+    "step": "Add routing and integrate all components in App.js",
+    "sub_steps": [
+      "Set up react-router-dom routes: '/', '/tickets/new', '/tickets/:id'.",
+      "Add navigation links between ticket list, create, and detail views.",
+      "Ensure App.js renders correct views for each route and integrates error/loading state passing.",
+      "Update styles as needed.",
+      "Ensure accessibility and consistent layout."
+    ],
+    "files_to_add": [],
+    "files_to_edit": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/App.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/App.css"
+    ],
+    "description": "Binds the application together, enabling smooth navigation and component integration required for end-to-end use flows."
+  },
+  {
+    "step": "Implement all provided frontend test cases (Jest/RTL: Tickets, components, and API calls)",
+    "sub_steps": [
+      "Implement the following test cases in appropriate .test.js files as specified above:",
+      " - ticketListRendering (TicketList.test.js)",
+      " - ticketSorting (TicketList.test.js)",
+      " - ticketDetailRendering (TicketDetail.test.js)",
+      " - ticketCreationForm (CreateTicket.test.js)",
+      " - apiIntegration (utils/api.test.js or spread across related component test files)",
+      "Use mocking (jest.fn(), global.fetch, etc.) for API calls and simulate all testable user interactions.",
+      "Ensure tests match selectors and validation error text as tests will check for these precisely.",
+      "NO manual cleanup(), only automatic cleanup in RTL.",
+      "Cover both positive and negative scenarios as described in JSON.",
+      "Test rendering, interactions, validation, API integration, loading, and error states."
+    ],
+    "files_to_add": [
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/TicketList.test.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/TicketDetail.test.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/components/CreateTicket.test.js",
+      "/home/coder/project/workspace/question_generation_service/solutions/b33a7878-f148-42f9-acb6-ffb7eb9f7fdd/reactapp/src/utils/api.test.js"
+    ],
+    "files_to_edit": [],
+    "description": "Ensures test coverage for all implemented frontend components and utilities, in accordance with provided requirements and test case descriptions. Maintains exact naming, selectors, and error handling per spec."
+  },
+  {
+    "step": "Compile and run frontend build and tests (React/Jest)",
+    "sub_steps": [
+      "Run npm install in the frontend directory to install dependencies.",
+      "Run npm run build to check for build errors.",
+      "Run npx eslint src/ --fix to lint and auto-fix code issues.",
+      "Run npm run test:ci to execute all provided test cases.",
+      "Validate passing tests and check for errors.",
+      "NO use of npm test -- --ci --coverage. NO blocking commands."
+    ],
+    "files_to_add": [],
+    "files_to_edit": [],
+    "description": "Validates the frontend implementation. Ensures all code builds, passes linting, and meets the provided Jest/RTL test requirements."
+  }
+]
