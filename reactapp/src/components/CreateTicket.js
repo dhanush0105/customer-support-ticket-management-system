@@ -2,37 +2,43 @@ import React, { useState } from 'react';
 import { createTicket } from '../utils/api';
 import { TICKET_PRIORITIES } from '../utils/constants';
 import { useNavigate } from 'react-router-dom';
-// import './CreateTicket.css';
+import { useAuth } from '../context/AuthContext';
 
-const INIT_FORM = {
-  subject: '',
-  description: '',
-  priority: 'LOW',
-  createdBy: '',
-};
+export default function CreateTicket() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-const CreateTicket = () => {
-  const [form, setForm] = useState(INIT_FORM);
+  const [form, setForm] = useState({
+    subject: '',
+    description: '',
+    priority: 'MEDIUM',
+    createdBy: user?.name || '',
+  });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   const validate = () => {
     let errs = {};
-    if (!form.subject.trim()) errs.subject = 'Required';
-    if (form.subject.length < 5 || form.subject.length > 100) errs.subject = '5-100 characters required';
-    if (!form.description.trim()) errs.description = 'Required';
-    if (form.description.length < 10 || form.description.length > 1000) errs.description = '10-1000 characters required';
-    if (!form.createdBy.trim()) errs.createdBy = 'Required';
-    if (form.createdBy.length < 2 || form.createdBy.length > 50) errs.createdBy = '2-50 characters required';
-    if (!form.priority) errs.priority = 'Required';
+    if (!form.subject.trim()) errs.subject = 'Subject is required';
+    else if (form.subject.length < 5 || form.subject.length > 100) errs.subject = 'Must be between 5 and 100 characters';
+
+    if (!form.description.trim()) errs.description = 'Description is required';
+    else if (form.description.length < 10 || form.description.length > 1000) errs.description = 'Must be between 10 and 1000 characters';
+
+    if (!form.createdBy.trim()) errs.createdBy = 'Your Name / Email is required';
+    else if (form.createdBy.length < 2 || form.createdBy.length > 50) errs.createdBy = 'Must be between 2 and 50 characters';
+
+    if (!form.priority) errs.priority = 'Priority is required';
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const handleChange = (e) => {
-    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const handleSubmit = async (e) => {
@@ -42,83 +48,122 @@ const CreateTicket = () => {
     setLoading(true);
     try {
       await createTicket(form);
-      navigate('/');
+      const dest = user?.role === 'ADMIN' ? '/admin' : user?.role === 'REPLIER' ? '/replier' : '/';
+      navigate(dest);
     } catch (e) {
-      setApiError(typeof e === 'string' ? e : 'Failed to create ticket');
+      setApiError(typeof e === 'string' ? e : 'Failed to create ticket. Please check connection.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="create-ticket-container">
-      <button className="btn-secondary" onClick={() => navigate(-1)} style={{marginBottom:8}}>← Back</button>
-      <form className="create-ticket-form" onSubmit={handleSubmit}>
-        <h2>Create Ticket</h2>
-        <label htmlFor="subject-input">Subject</label>
-        <input
-          id="subject-input"
-          name="subject"
-          value={form.subject}
-          onChange={handleChange}
-          disabled={loading}
-          type="text"
-          required
-          maxLength={100}
-          data-testid="subject-input"
-        />
-        {errors.subject && <div className="error">{errors.subject}</div>}
+    <div className="form-page">
+      <div style={{ marginBottom: 18 }}>
+        <button className="btn-secondary" onClick={() => navigate(-1)}>← Back</button>
+      </div>
 
-        <label htmlFor="description-input">Description</label>
-        <textarea
-          id="description-input"
-          name="description"
-          value={form.description}
-          onChange={handleChange}
-          disabled={loading}
-          maxLength={1000}
-          required
-          data-testid="description-input"
-        />
-        {errors.description && <div className="error">{errors.description}</div>}
+      <div className="form-card">
+        <div className="form-card-header">
+          <h2>Create Support Ticket</h2>
+          <p>Submit your inquiry or incident details and our support team will respond promptly.</p>
+        </div>
 
-        <label htmlFor="priority-select">Priority</label>
-        <select
-          id="priority-select"
-          name="priority"
-          value={form.priority}
-          onChange={handleChange}
-          disabled={loading}
-          data-testid="priority-select"
-          required
-        >
-          {TICKET_PRIORITIES.map(p => (
-            <option key={p} value={p}>{p}</option>
-          ))}
-        </select>
-        {errors.priority && <div className="error">{errors.priority}</div>}
+        <form onSubmit={handleSubmit}>
+          <div className="form-card-body">
+            {apiError && (
+              <div className="error-banner">
+                <span>⚠️</span> {apiError}
+              </div>
+            )}
 
-        <label htmlFor="createdBy-input">Created By</label>
-        <input
-          id="createdBy-input"
-          name="createdBy"
-          value={form.createdBy}
-          onChange={handleChange}
-          disabled={loading}
-          type="text"
-          required
-          maxLength={50}
-          data-testid="createdBy-input"
-        />
-        {errors.createdBy && <div className="error">{errors.createdBy}</div>}
+            <div className="field">
+              <label htmlFor="subject-input">Subject Summary *</label>
+              <input
+                id="subject-input"
+                name="subject"
+                placeholder="Brief, descriptive summary (e.g., Cannot connect to database)"
+                value={form.subject}
+                onChange={handleChange}
+                disabled={loading}
+                type="text"
+                required
+                maxLength={100}
+                data-testid="subject-input"
+              />
+              {errors.subject && <span className="error-msg">{errors.subject}</span>}
+            </div>
 
-        {apiError && <div className="error">{apiError}</div>}
-        <button className="btn-primary" type="submit" data-testid="create-btn" disabled={loading}>
-          {loading ? 'Creating...' : 'Create Ticket'}
-        </button>
-      </form>
+            <div className="field">
+              <label htmlFor="description-input">Detailed Description *</label>
+              <textarea
+                id="description-input"
+                name="description"
+                placeholder="Provide steps to reproduce, error codes, and what you expected to happen..."
+                value={form.description}
+                onChange={handleChange}
+                disabled={loading}
+                maxLength={1000}
+                rows={5}
+                required
+                data-testid="description-input"
+              />
+              {errors.description && <span className="error-msg">{errors.description}</span>}
+            </div>
+
+            <div className="grid-2">
+              <div className="field">
+                <label htmlFor="priority-select">Priority Level *</label>
+                <select
+                  id="priority-select"
+                  name="priority"
+                  value={form.priority}
+                  onChange={handleChange}
+                  disabled={loading}
+                  data-testid="priority-select"
+                  required
+                >
+                  {TICKET_PRIORITIES.map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+                {errors.priority && <span className="error-msg">{errors.priority}</span>}
+              </div>
+
+              <div className="field">
+                <label htmlFor="createdBy-input">Your Name or Email *</label>
+                <input
+                  id="createdBy-input"
+                  name="createdBy"
+                  placeholder="e.g. Jane Doe or user@example.com"
+                  value={form.createdBy}
+                  onChange={handleChange}
+                  disabled={loading}
+                  type="text"
+                  required
+                  maxLength={50}
+                  data-testid="createdBy-input"
+                />
+                {errors.createdBy && <span className="error-msg">{errors.createdBy}</span>}
+              </div>
+            </div>
+          </div>
+
+          <div className="form-card-footer">
+            <button type="button" className="btn-secondary" onClick={() => navigate(-1)} disabled={loading}>
+              Cancel
+            </button>
+            <button
+              className="btn-primary"
+              type="submit"
+              data-testid="create-btn"
+              disabled={loading}
+            >
+              {loading ? 'Transmitting...' : '🚀 Submit Ticket'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
-};
-
-export default CreateTicket;
+}

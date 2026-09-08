@@ -1,26 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getTicketById, getResponsesForTicket, addResponse, updateTicketStatus } from '../utils/api';
-import { TICKET_STATUSES, STATUS_COLORS } from '../utils/constants';
-// import './TicketDetail.css'; <-- not required, styles are in App.css
+import { TICKET_STATUSES } from '../utils/constants';
+import { useAuth } from '../context/AuthContext';
 
 function formatDate(dateStr) {
+  if (!dateStr) return '';
   const dt = new Date(dateStr);
   if (isNaN(dt.getTime())) return '';
   return dt.toLocaleString('en-US', {
-    month: '2-digit',
-    day: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
+    month: '2-digit', day: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: false
   }).replace(',', '');
 }
 
-const TicketDetail = () => {
+const STATUS_CHIP_COLORS = {
+  OPEN: { bg: '#fee2e2', color: '#991b1b', border: '#fecaca' },
+  IN_PROGRESS: { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
+  RESOLVED: { bg: '#dcfce7', color: '#14532d', border: '#bbf7d0' },
+  CLOSED: { bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' },
+};
+
+export default function TicketDetail() {
   const { id } = useParams();
   const ticketId = id;
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [ticket, setTicket] = useState(null);
   const [responses, setResponses] = useState([]);
@@ -29,20 +34,21 @@ const TicketDetail = () => {
   const [statusLoading, setStatusLoading] = useState(false);
   const [error, setError] = useState('');
   const [respError, setRespError] = useState('');
-  const [form, setForm] = useState({ message: '', respondedBy: '' });
+  const [form, setForm] = useState({ message: '', respondedBy: user?.name || '' });
   const [formErr, setFormErr] = useState('');
 
   // Initial fetch
   useEffect(() => {
     setLoading(true);
     getTicketById(ticketId)
-      .then((data) => {
+      .then(data => {
         setTicket(data);
         setError('');
       })
-      .catch((e) => setError(typeof e === 'string' ? e : 'Failed to load ticket'))
+      .catch(e => setError(typeof e === 'string' ? e : 'Failed to load ticket'))
       .finally(() => setLoading(false));
   }, [ticketId]);
+
   // Fetch responses
   useEffect(() => {
     if (!ticketId) return;
@@ -52,7 +58,7 @@ const TicketDetail = () => {
         setRespError('');
       })
       .catch(err => setRespError(typeof err === 'string' ? err : 'Failed to load responses'));
-  }, [ticketId, ticket && ticket.updatedAt]);
+  }, [ticketId, ticket?.updatedAt]);
 
   const handleStatusChange = async (e) => {
     const newStatus = e.target.value;
@@ -70,7 +76,7 @@ const TicketDetail = () => {
 
   const validateForm = () => {
     if (!form.message.trim() || !form.respondedBy.trim()) {
-      setFormErr('Both fields required.');
+      setFormErr('Both fields are required.');
       return false;
     }
     if (form.message.length > 500) {
@@ -86,7 +92,9 @@ const TicketDetail = () => {
   };
 
   const handleFormChange = (e) => {
-    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setForm(f => ({ ...f, [name]: value }));
+    if (formErr) setFormErr('');
   };
 
   const handleAddResponse = async (e) => {
@@ -95,13 +103,13 @@ const TicketDetail = () => {
     setRespLoading(true);
     try {
       await addResponse(ticketId, form);
-      // Responses reloaded via useEffect on updatedAt update
-      setForm({ message: '', respondedBy: '' });
+      setForm({ message: '', respondedBy: user?.name || '' });
       setFormErr('');
       setRespError('');
-      // Force ticket refresh (in case status changed)
       const updated = await getTicketById(ticketId);
       setTicket(updated);
+      const resps = await getResponsesForTicket(ticketId);
+      setResponses(resps.sort((a, b) => new Date(b.respondedAt) - new Date(a.respondedAt)));
     } catch (e) {
       setRespError(typeof e === 'string' ? e : 'Failed to add response');
     } finally {
@@ -109,91 +117,158 @@ const TicketDetail = () => {
     }
   };
 
+  const sc = ticket ? (STATUS_CHIP_COLORS[ticket.status] || STATUS_CHIP_COLORS.CLOSED) : {};
+
   return (
-    <div className="ticket-detail-container">
-      <button className="btn-secondary" onClick={() => navigate(-1)} style={{marginBottom:8}}>← Back</button>
+    <div className="detail-page">
+      <div>
+        <button className="btn-secondary" onClick={() => navigate(-1)}>← Back</button>
+      </div>
+
       {loading ? (
-        <div className="empty-state">Loading ticket details...</div>
+        <div className="loading-text">Loading ticket details...</div>
       ) : error ? (
-        <div className="error">{error}</div>
+        <div className="error-banner"><span>⚠️</span> {error}</div>
       ) : ticket && (
-        <div>
-          <h2>Ticket Details</h2>
-          <div className="ticket-detail-block">
-            <div><strong>ID:</strong> {ticket.id}</div>
-            <div><strong>Subject:</strong> {ticket.subject}</div>
-            <div><strong>Description:</strong> {ticket.description}</div>
+        <div className="detail-card">
+          {/* Header */}
+          <div className="detail-top">
             <div>
-              <strong>Status:</strong> <span className="ticket-status-chip" style={{ background: STATUS_COLORS[ticket.status] || '#eee' }}>{ticket.status}</span>
+              <h2>#{ticket.id}: {ticket.subject}</h2>
+              <div className="detail-tag-row">
+                <span className={`pill ${ticket.priority}`}>{ticket.priority} Priority</span>
+                <span className="pill" style={{ background: sc.bg, color: sc.color }}>
+                  {ticket.status.replace('_', ' ')}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--slate-500)', textTransform: 'uppercase' }}>Status:</span>
               <select
+                className="status-select"
                 value={ticket.status}
-                style={{ marginLeft: 8 }}
                 disabled={statusLoading}
+                style={{ background: sc.bg, color: sc.color, border: `1px solid ${sc.border}` }}
                 onChange={handleStatusChange}
                 data-testid="status-select"
               >
                 {TICKET_STATUSES.map(s => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s} value={s}>{s.replace('_', ' ')}</option>
                 ))}
               </select>
             </div>
-            <div><strong>Priority:</strong> {ticket.priority}</div>
-            <div><strong>Created By:</strong> {ticket.createdBy}</div>
-            <div><strong>Created At:</strong> {formatDate(ticket.createdAt)}</div>
-            <div><strong>Updated At:</strong> {formatDate(ticket.updatedAt)}</div>
           </div>
 
-          <h3>Responses</h3>
-          {respError && <div className="error">{respError}</div>}
-          {responses && responses.length === 0 && (
-            <div className="empty-state">No responses yet.</div>
-          )}
-          {responses && responses.length > 0 && (
-            <ul className="response-list">
-              {responses.map(resp => (
-                <li key={resp.id} className="response-item">
-                  <div>{resp.message}</div>
-                  <div style={{ color: '#64748b', fontSize: '0.96em' }}>
-                    By <b>{resp.respondedBy}</b> at {formatDate(resp.respondedAt)}
+          {/* Key Attributes Grid */}
+          <div className="detail-grid">
+            <div className="detail-grid-cell">
+              <div className="cell-label">Requester</div>
+              <div className="cell-value">👤 {ticket.createdBy}</div>
+            </div>
+            <div className="detail-grid-cell">
+              <div className="cell-label">Date Submitted</div>
+              <div className="cell-value">{formatDate(ticket.createdAt)}</div>
+            </div>
+            <div className="detail-grid-cell">
+              <div className="cell-label">Ticket Reference ID</div>
+              <div className="cell-value">#{ticket.id}</div>
+            </div>
+            <div className="detail-grid-cell">
+              <div className="cell-label">Last Activity</div>
+              <div className="cell-value">{formatDate(ticket.updatedAt || ticket.createdAt)}</div>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="detail-desc">
+            <div className="section-label">Incident Description</div>
+            <p>{ticket.description}</p>
+          </div>
+
+          {/* Responses Stream */}
+          <div className="detail-responses">
+            <div className="section-label">Communication Thread ({responses.length})</div>
+
+            {respError && <div className="error-banner"><span>⚠️</span> {respError}</div>}
+
+            {responses.length === 0 ? (
+              <p style={{ color: 'var(--slate-400)', fontStyle: 'italic', margin: '8px 0 16px' }}>
+                No replies recorded yet. Post an update using the form below.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, margin: '12px 0 24px' }}>
+                {responses.map(resp => (
+                  <div key={resp.id} className="response-bubble">
+                    <div className="bubble-avatar">
+                      {(resp.respondedBy || 'U').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                    <div className="bubble-body-wrap">
+                      <div className="bubble-header-row">
+                        <span className="bubble-name">{resp.respondedBy}</span>
+                        <span className="bubble-time">{formatDate(resp.respondedAt)}</span>
+                      </div>
+                      <div className="bubble-message">{resp.message}</div>
+                    </div>
                   </div>
-                </li>
-              ))}
-            </ul>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
 
-          <form className="response-form" onSubmit={handleAddResponse} style={{ marginTop: '1.5em' }}>
-            <label htmlFor="response-message">Message</label>
-            <textarea
-              name="message"
-              id="response-message"
-              maxLength={500}
-              required
-              value={form.message}
-              onChange={handleFormChange}
-              disabled={respLoading}
-            />
+          {/* Reply Form */}
+          <div className="response-form-area">
+            <form onSubmit={handleAddResponse}>
+              <div className="form-card-body" style={{ padding: 0, gap: 14 }}>
+                <div className="section-label">Post a Public Reply</div>
 
-            <label htmlFor="response-by">Responded By</label>
-            <input
-              type="text"
-              name="respondedBy"
-              id="response-by"
-              maxLength={50}
-              required
-              value={form.respondedBy}
-              onChange={handleFormChange}
-              disabled={respLoading}
-            />
+                <div className="field">
+                  <label htmlFor="response-message">Your Message</label>
+                  <textarea
+                    name="message"
+                    id="response-message"
+                    maxLength={500}
+                    rows={4}
+                    placeholder="Type your response or troubleshooting steps..."
+                    required
+                    value={form.message}
+                    onChange={handleFormChange}
+                    disabled={respLoading}
+                  />
+                </div>
 
-            {formErr && <div className="error">{formErr}</div>}
-            <button className="btn-primary" type="submit" disabled={respLoading} data-testid="add-response-btn">
-              {respLoading ? 'Sending...' : 'Add Response'}
-            </button>
-          </form>
+                <div className="field" style={{ maxWidth: 320 }}>
+                  <label htmlFor="response-by">Your Name / Agent Handle</label>
+                  <input
+                    type="text"
+                    name="respondedBy"
+                    id="response-by"
+                    maxLength={50}
+                    placeholder="Full name"
+                    required
+                    value={form.respondedBy}
+                    onChange={handleFormChange}
+                    disabled={respLoading}
+                  />
+                </div>
+
+                {formErr && <div className="error-msg">{formErr}</div>}
+
+                <div>
+                  <button
+                    className="btn-primary"
+                    type="submit"
+                    disabled={respLoading || !form.message.trim()}
+                    data-testid="add-response-btn"
+                  >
+                    {respLoading ? 'Transmitting...' : '🚀 Submit Response'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
   );
-};
-
-export default TicketDetail;
+}

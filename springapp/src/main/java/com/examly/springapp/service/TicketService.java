@@ -83,4 +83,11 @@ public class TicketService {
         Ticket ticket = ticketRepository.findById(ticketId).orElseThrow(EntityNotFoundException::new);
         return responseRepository.findByTicketOrderByRespondedAtDesc(ticket);
     }
+
+    @Transactional
+    public void deleteTicket(Long ticketId) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+            .orElseThrow(() -> new EntityNotFoundException("Ticket not found"));
+        ticketRepository.delete(ticket);
+    }
 }

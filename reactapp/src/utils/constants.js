@@ -25,3 +25,7 @@ export const PRIORITY_SORT_MAPPING = {
   MEDIUM: 2,
   LOW: 1,
 };
+
+// Shorthand aliases
+export const STATUSES = TICKET_STATUSES;
+export const PRIORITIES = TICKET_PRIORITIES;

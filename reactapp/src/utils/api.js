@@ -55,3 +55,12 @@ export const getResponsesForTicket = async (ticketId) => {
     throw new Error(err.response?.data?.message || 'Failed to fetch responses');
   }
 };
+
+export const deleteTicket = async (id) => {
+  try {
+    await axios.delete(`${API_BASE_URL}/api/tickets/${id}`);
+    return true;
+  } catch (err) {
+    throw new Error(err.response?.data?.message || 'Failed to delete ticket');
+  }
+};

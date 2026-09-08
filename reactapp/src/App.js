@@ -1,43 +1,76 @@
-import './App.css';
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import TicketList from './components/TicketList';
-import TicketDetail from './components/TicketDetail';
-import CreateTicket from './components/CreateTicket';
+import './styles/supportflow.css';
+import { SupportFlowProvider, useSupportFlow } from './context/SupportFlowContext';
+import Sidebar from './components/layout/Sidebar';
+import TopNav from './components/layout/TopNav';
+import GlobalSearchModal from './components/layout/GlobalSearchModal';
+import ToastContainer from './components/common/ToastContainer';
+import CreateTicketModal from './components/tickets/CreateTicketModal';
+import LoginPage from './components/auth/LoginPage';
+import OverviewPage from './components/dashboard/OverviewPage';
+import TicketsPage from './components/tickets/TicketsPage';
+import TicketDetailPage from './components/tickets/TicketDetailPage';
+import CustomersPage from './components/customers/CustomersPage';
+import TeamPage from './components/team/TeamPage';
+import KnowledgeBasePage from './components/knowledge/KnowledgeBasePage';
+import AnalyticsPage from './components/analytics/AnalyticsPage';
+import SettingsPage from './components/settings/SettingsPage';
 
-function App() {
+function SupportFlowApp() {
+  const { activeNav } = useSupportFlow();
+
+  if (activeNav === 'login') {
+    return <LoginPage />;
+  }
+
+  const renderMainView = () => {
+    switch (activeNav) {
+      case 'overview':
+        return <OverviewPage />;
+      case 'tickets':
+        return <TicketsPage />;
+      case 'ticket-detail':
+        return <TicketDetailPage />;
+      case 'customers':
+        return <CustomersPage />;
+      case 'team':
+        return <TeamPage />;
+      case 'knowledge':
+        return <KnowledgeBasePage />;
+      case 'analytics':
+        return <AnalyticsPage />;
+      case 'settings':
+        return <SettingsPage />;
+      default:
+        return <OverviewPage />;
+    }
+  };
 
   return (
-    <Router>
+    <div className="sf-shell">
+      {/* 240px Fixed Sidebar */}
+      <Sidebar />
 
-      <div className="App">
-        <nav style={{ padding: '1.1rem', background: '#f7fafc', boxShadow: '0 1px 6px rgba(0,0,0,.06)', marginBottom: '2rem' }}>
-          <Link to="/" style={{ fontWeight: 700, fontSize: '1.22em', marginRight: 24, color: '#3b82f6', textDecoration: 'none', letterSpacing: '0.01em' }}>
-            Ticket Support
-          </Link>
+      {/* Main Content Area */}
+      <div className="sf-main">
+        <TopNav />
+        <main className="sf-content">
+          {renderMainView()}
+        </main>
+      </div>
 
-          <Link to="/" style={{ marginRight: 15, color: '#222', textDecoration: 'none' }}>
-            Ticket List
-          </Link>
-  
-          <Link to="/tickets/new" style={{ color: '#222', textDecoration: 'none' }}>
-            Create Ticket
-          </Link>
-        </nav>
-
-        <Routes>
-          <Route path="/" element={<TicketList />} />
-          <Route path="/tickets/new" element={<CreateTicket />} />
-          <Route path="/tickets/:id" element={<TicketDetail />} />
-  
-        </Routes>
-  
-       </div>
-  
-    </Router>
-
+      {/* Global Overlays & Modals */}
+      <GlobalSearchModal />
+      <CreateTicketModal />
+      <ToastContainer />
+    </div>
   );
-
 }
 
-export default App;
+export default function App() {
+  return (
+    <SupportFlowProvider>
+      <SupportFlowApp />
+    </SupportFlowProvider>
+  );
+}
