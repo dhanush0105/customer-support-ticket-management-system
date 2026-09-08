@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useSupportFlow } from '../../context/SupportFlowContext';
-import { X } from 'lucide-react';
+import { X, Paperclip, FileText } from 'lucide-react';
 import { PRIORITIES } from '../../services/mockData';
 
 export default function CreateTicketModal() {
@@ -13,6 +13,8 @@ export default function CreateTicketModal() {
     createdBy: currentUser.name || ''
   });
 
+  const [attachment, setAttachment] = useState(null);
+  const fileInputRef = useRef(null);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -33,13 +35,34 @@ export default function CreateTicketModal() {
     return Object.keys(errs).length === 0;
   };
 
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be under 5MB.');
+      return;
+    }
+    setAttachment({
+      name: file.name,
+      size: (file.size / 1024).toFixed(1) + ' KB',
+      type: file.type
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
     try {
-      await createTicket(form);
+      const payload = {
+        ...form,
+        description: attachment
+          ? `${form.description.trim()}\n\n[Attachment: ${attachment.name} (${attachment.size})]`
+          : form.description.trim()
+      };
+      await createTicket(payload);
       setIsCreateTicketOpen(false);
+      setAttachment(null);
       setForm({
         subject: '',
         description: '',
@@ -138,6 +161,44 @@ export default function CreateTicketModal() {
                   <option key={p} value={p}>{p}</option>
                 ))}
               </select>
+            </div>
+
+            {/* Optional Attachment */}
+            <div className="sf-form-group">
+              <label className="sf-form-label">Attachment (Optional screenshot or error log)</label>
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleFileSelect}
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button
+                  type="button"
+                  className="sf-btn sf-btn-secondary sf-btn-sm"
+                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                  disabled={submitting}
+                >
+                  <Paperclip size={13} />
+                  Choose File...
+                </button>
+                {attachment ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+                    <FileText size={13} color="var(--sf-primary)" />
+                    <span style={{ fontWeight: 600 }}>{attachment.name}</span>
+                    <span style={{ color: 'var(--sf-text-muted)' }}>({attachment.size})</span>
+                    <button
+                      type="button"
+                      onClick={() => setAttachment(null)}
+                      style={{ border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex' }}
+                    >
+                      <X size={12} color="var(--sf-text-muted)" />
+                    </button>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: 12, color: 'var(--sf-text-muted)' }}>No file chosen (Max 5MB)</span>
+                )}
+              </div>
             </div>
           </div>
 

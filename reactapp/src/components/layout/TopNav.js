@@ -5,7 +5,9 @@ import {
   Bell,
   HelpCircle,
   Plus,
-  CheckCheck
+  CheckCheck,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export default function TopNav() {
@@ -21,7 +23,9 @@ export default function TopNav() {
     markNotificationRead,
     markAllNotificationsRead,
     navigateToTicket,
-    currentUser
+    currentUser,
+    theme,
+    toggleTheme
   } = useSupportFlow();
 
   const getBreadcrumbTitle = () => {
@@ -124,6 +128,16 @@ export default function TopNav() {
             </div>
           )}
         </div>
+
+        {/* Theme Toggle (Dark/Light Mode) */}
+        <button
+          className="sf-icon-btn"
+          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          onClick={toggleTheme}
+          style={{ transition: 'all 0.2s ease' }}
+        >
+          {theme === 'dark' ? <Sun size={15} style={{ color: '#FBBF24' }} /> : <Moon size={15} />}
+        </button>
 
         {/* Help Center icon */}
         <button

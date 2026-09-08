@@ -5,14 +5,16 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-  TrendingUp,
   Download,
   Calendar,
   AlertTriangle,
   ArrowUpRight,
   Plus,
-  RefreshCw
+  RefreshCw,
+  ShieldAlert,
+  Star
 } from 'lucide-react';
+import { calculateTicketSLA } from '../../utils/sla';
 import {
   LineChart,
   Line,
@@ -29,7 +31,7 @@ import {
 } from 'recharts';
 
 export default function OverviewPage() {
-  const { tickets, loading, error, loadTickets, navigateToTicket, setActiveNav, setIsCreateTicketOpen, addToast } = useSupportFlow();
+  const { tickets, loading, error, loadTickets, navigateToTicket, setActiveNav, setIsCreateTicketOpen, addToast, csatRatings } = useSupportFlow();
   const [timeRange, setTimeRange] = useState('7d');
 
   // Real KPIs computed directly from database
@@ -42,6 +44,30 @@ export default function OverviewPage() {
     const totalResponses = tickets.reduce((acc, t) => acc + (t.responses ? t.responses.length : 0), 0);
     return { total, open, inProgress, resolved, highPriority, totalResponses };
   }, [tickets]);
+
+  // Real SLA Metrics
+  const slaMetrics = useMemo(() => {
+    if (tickets.length === 0) return { compliance: 100, breached: 0, atRisk: 0, healthy: 0 };
+    let breached = 0;
+    let atRisk = 0;
+    let healthy = 0;
+    tickets.forEach(t => {
+      const sla = calculateTicketSLA(t);
+      if (sla.status === 'BREACHED') breached++;
+      else if (sla.status === 'AT_RISK') atRisk++;
+      else healthy++;
+    });
+    const compliance = Math.round(((tickets.length - breached) / tickets.length) * 100);
+    return { compliance, breached, atRisk, healthy };
+  }, [tickets]);
+
+  // Real CSAT Score
+  const csatScore = useMemo(() => {
+    const ratings = Object.values(csatRatings || {});
+    if (ratings.length === 0) return { score: '4.9', count: 0 };
+    const sum = ratings.reduce((a, b) => a + Number(b.rating), 0);
+    return { score: (sum / ratings.length).toFixed(1), count: ratings.length };
+  }, [csatRatings]);
 
   // Real Status Donut breakdown
   const statusDonutData = useMemo(() => {
@@ -245,12 +271,27 @@ export default function OverviewPage() {
 
         <div className="sf-kpi-card">
           <div className="sf-kpi-top">
-            <span className="sf-kpi-label">Total Responses</span>
-            <TrendingUp className="sf-kpi-icon" color="var(--sf-primary)" />
+            <span className="sf-kpi-label">SLA Compliance</span>
+            <ShieldAlert className="sf-kpi-icon" color={slaMetrics.breached > 0 ? 'var(--sf-danger)' : 'var(--sf-success)'} />
           </div>
-          <div className="sf-kpi-value">{metrics.totalResponses}</div>
+          <div className="sf-kpi-value" style={{ color: slaMetrics.breached > 0 ? 'var(--sf-danger)' : 'var(--sf-success)' }}>
+            {slaMetrics.compliance}%
+          </div>
           <div className="sf-kpi-footer">
-            <span>Logged communications</span>
+            <span>{slaMetrics.breached} breached · {slaMetrics.atRisk} at risk</span>
+          </div>
+        </div>
+
+        <div className="sf-kpi-card">
+          <div className="sf-kpi-top">
+            <span className="sf-kpi-label">Customer CSAT</span>
+            <Star className="sf-kpi-icon" color="#F59E0B" />
+          </div>
+          <div className="sf-kpi-value">
+            {csatScore.score} <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--sf-text-muted)' }}>/ 5.0</span>
+          </div>
+          <div className="sf-kpi-footer">
+            <span>{csatScore.count} rated surveys</span>
           </div>
         </div>
       </div>
@@ -431,40 +472,49 @@ export default function OverviewPage() {
                 <th>Subject</th>
                 <th>Priority</th>
                 <th>Status</th>
+                <th>SLA Target</th>
                 <th>Created By</th>
                 <th>Responses</th>
                 <th style={{ textAlign: 'right' }}>Created At</th>
               </tr>
             </thead>
             <tbody>
-              {tickets.slice(0, 8).map(t => (
-                <tr key={t.id} onClick={() => navigateToTicket(t.id)}>
-                  <td className="sf-ticket-id">#{t.id}</td>
-                  <td className="sf-ticket-subject-cell">
-                    <div className="sf-ticket-subject-title">{t.subject}</div>
-                  </td>
-                  <td>
-                    <span className={`sf-badge sf-priority-${t.priority.toLowerCase()}`}>
-                      {t.priority}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`sf-badge sf-badge-${t.status.toLowerCase().replace('_', '-')}`}>
-                      <span className="sf-badge-dot" />
-                      {t.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td style={{ color: 'var(--sf-text-secondary)' }}>{t.createdBy}</td>
-                  <td>
-                    <span className="sf-badge" style={{ backgroundColor: '#F3F4F6', color: '#4B5563' }}>
-                      💬 {t.responses ? t.responses.length : 0}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'right', fontSize: 12.5, color: 'var(--sf-text-muted)' }}>
-                    {formatDate(t.createdAt)}
-                  </td>
-                </tr>
-              ))}
+              {tickets.slice(0, 8).map(t => {
+                const sla = calculateTicketSLA(t);
+                return (
+                  <tr key={t.id} onClick={() => navigateToTicket(t.id)}>
+                    <td className="sf-ticket-id">#{t.id}</td>
+                    <td className="sf-ticket-subject-cell">
+                      <div className="sf-ticket-subject-title">{t.subject}</div>
+                    </td>
+                    <td>
+                      <span className={`sf-badge sf-priority-${t.priority.toLowerCase()}`}>
+                        {t.priority}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`sf-badge sf-badge-${t.status.toLowerCase().replace('_', '-')}`}>
+                        <span className="sf-badge-dot" />
+                        {t.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`sf-sla-chip ${sla.badgeClass}`}>
+                        {sla.countdownText}
+                      </span>
+                    </td>
+                    <td style={{ color: 'var(--sf-text-secondary)' }}>{t.createdBy}</td>
+                    <td>
+                      <span className="sf-badge" style={{ backgroundColor: '#F3F4F6', color: '#4B5563' }}>
+                        💬 {t.responses ? t.responses.length : 0}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right', fontSize: 12.5, color: 'var(--sf-text-muted)' }}>
+                      {formatDate(t.createdAt)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

@@ -40,13 +40,49 @@ export const SupportFlowProvider = ({ children }) => {
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [readArticle, setReadArticle] = useState(null);
 
+  // Dark/Light Theme state
+  const [theme, setTheme] = useState(() => localStorage.getItem('sf-theme') || 'light');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('sf-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  };
+
+  // CSAT Ratings persisted in localStorage
+  const [csatRatings, setCsatRatings] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('sf-csat') || '{}');
+    } catch {
+      return {};
+    }
+  });
+
+  const submitCSAT = (ticketId, rating, feedback = '') => {
+    const updated = {
+      ...csatRatings,
+      [ticketId]: {
+        rating,
+        feedback,
+        submittedAt: new Date().toISOString()
+      }
+    };
+    setCsatRatings(updated);
+    localStorage.setItem('sf-csat', JSON.stringify(updated));
+    addToast(`Thank you! Your CSAT rating (${rating}/5 ⭐) was recorded.`, 'success');
+  };
+
   // Filters for tickets page
   const [ticketFilters, setTicketFilters] = useState({
     search: '',
     status: 'ALL',
     priority: 'ALL',
     category: 'ALL',
-    assignee: 'ALL'
+    assignee: 'ALL',
+    slaStatus: 'ALL'
   });
 
   // Toasts
@@ -337,7 +373,11 @@ export const SupportFlowProvider = ({ children }) => {
         setReadArticle,
         toasts,
         addToast,
-        removeToast
+        removeToast,
+        theme,
+        toggleTheme,
+        csatRatings,
+        submitCSAT
       }}
     >
       {children}

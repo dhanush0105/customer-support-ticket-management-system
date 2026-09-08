@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useSupportFlow } from '../../context/SupportFlowContext';
 import { Plus, Search, Filter, RefreshCw, Trash2, ArrowUpRight } from 'lucide-react';
 import { PRIORITIES, STATUSES } from '../../services/mockData';
+import { calculateTicketSLA } from '../../utils/sla';
 
 export default function TicketsPage() {
   const {
@@ -27,7 +28,8 @@ export default function TicketsPage() {
       status: 'ALL',
       priority: 'ALL',
       category: 'ALL',
-      assignee: 'ALL'
+      assignee: 'ALL',
+      slaStatus: 'ALL'
     });
     addToast('Filters reset.');
   };
@@ -54,7 +56,12 @@ export default function TicketsPage() {
       const matchPriority =
         ticketFilters.priority === 'ALL' || t.priority === ticketFilters.priority;
 
-      return matchSearch && matchStatus && matchPriority;
+      const matchSla =
+        !ticketFilters.slaStatus ||
+        ticketFilters.slaStatus === 'ALL' ||
+        calculateTicketSLA(t).status === ticketFilters.slaStatus;
+
+      return matchSearch && matchStatus && matchPriority && matchSla;
     });
   }, [tickets, ticketFilters]);
 
@@ -130,10 +137,24 @@ export default function TicketsPage() {
           ))}
         </select>
 
+        {/* SLA Status Filter */}
+        <select
+          className="sf-select"
+          value={ticketFilters.slaStatus || 'ALL'}
+          onChange={e => handleFilterChange('slaStatus', e.target.value)}
+        >
+          <option value="ALL">SLA: All</option>
+          <option value="BREACHED">🚨 Breached</option>
+          <option value="AT_RISK">⚠️ At Risk (&lt;1h)</option>
+          <option value="HEALTHY">✅ On Track</option>
+          <option value="MET">🏁 Met in SLA</option>
+        </select>
+
         {/* Reset */}
         {(ticketFilters.search ||
           ticketFilters.status !== 'ALL' ||
-          ticketFilters.priority !== 'ALL') && (
+          ticketFilters.priority !== 'ALL' ||
+          ticketFilters.slaStatus !== 'ALL') && (
           <button className="sf-btn sf-btn-ghost sf-btn-sm" onClick={handleResetFilters}>
             <RefreshCw size={12} />
             Reset Filters
@@ -150,6 +171,7 @@ export default function TicketsPage() {
               <th>Subject</th>
               <th>Priority</th>
               <th>Status</th>
+              <th>SLA Target</th>
               <th>Created By</th>
               <th>Responses</th>
               <th>Created At</th>
@@ -159,13 +181,13 @@ export default function TicketsPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} style={{ padding: '40px', textAlign: 'center', color: 'var(--sf-text-muted)' }}>
+                <td colSpan={9} style={{ padding: '40px', textAlign: 'center', color: 'var(--sf-text-muted)' }}>
                   Loading tickets from database...
                 </td>
               </tr>
             ) : filteredTickets.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ padding: '48px', textAlign: 'center', color: 'var(--sf-text-muted)' }}>
+                <td colSpan={9} style={{ padding: '48px', textAlign: 'center', color: 'var(--sf-text-muted)' }}>
                   <Filter size={24} style={{ margin: '0 auto 8px', opacity: 0.5 }} />
                   <div style={{ fontSize: 14, fontWeight: 500 }}>No tickets found</div>
                   <p style={{ fontSize: 12.5, marginTop: 4 }}>
@@ -176,32 +198,39 @@ export default function TicketsPage() {
                 </td>
               </tr>
             ) : (
-              filteredTickets.map(ticket => (
-                <tr key={ticket.id} onClick={() => navigateToTicket(ticket.id)}>
-                  <td className="sf-ticket-id">#{ticket.id}</td>
-                  <td className="sf-ticket-subject-cell">
-                    <div className="sf-ticket-subject-title">{ticket.subject}</div>
-                  </td>
-                  <td>
-                    <span className={`sf-badge sf-priority-${ticket.priority.toLowerCase()}`}>
-                      {ticket.priority}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`sf-badge sf-badge-${ticket.status.toLowerCase().replace('_', '-')}`}>
-                      <span className="sf-badge-dot" />
-                      {ticket.status.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td style={{ color: 'var(--sf-text-secondary)' }}>{ticket.createdBy}</td>
-                  <td>
-                    <span className="sf-badge" style={{ backgroundColor: '#F3F4F6', color: '#4B5563' }}>
-                      💬 {ticket.responses ? ticket.responses.length : 0}
-                    </span>
-                  </td>
-                  <td style={{ color: 'var(--sf-text-muted)', fontSize: 12.5 }}>
-                    {formatDate(ticket.createdAt)}
-                  </td>
+              filteredTickets.map(ticket => {
+                const sla = calculateTicketSLA(ticket);
+                return (
+                  <tr key={ticket.id} onClick={() => navigateToTicket(ticket.id)}>
+                    <td className="sf-ticket-id">#{ticket.id}</td>
+                    <td className="sf-ticket-subject-cell">
+                      <div className="sf-ticket-subject-title">{ticket.subject}</div>
+                    </td>
+                    <td>
+                      <span className={`sf-badge sf-priority-${ticket.priority.toLowerCase()}`}>
+                        {ticket.priority}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`sf-badge sf-badge-${ticket.status.toLowerCase().replace('_', '-')}`}>
+                        <span className="sf-badge-dot" />
+                        {ticket.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`sf-sla-chip ${sla.badgeClass}`}>
+                        {sla.countdownText}
+                      </span>
+                    </td>
+                    <td style={{ color: 'var(--sf-text-secondary)' }}>{ticket.createdBy}</td>
+                    <td>
+                      <span className="sf-badge" style={{ backgroundColor: '#F3F4F6', color: '#4B5563' }}>
+                        💬 {ticket.responses ? ticket.responses.length : 0}
+                      </span>
+                    </td>
+                    <td style={{ color: 'var(--sf-text-muted)', fontSize: 12.5 }}>
+                      {formatDate(ticket.createdAt)}
+                    </td>
                   <td style={{ textAlign: 'right' }} onClick={e => e.stopPropagation()}>
                     <div style={{ display: 'inline-flex', gap: 6 }}>
                       <button
@@ -222,8 +251,8 @@ export default function TicketsPage() {
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
+              );
+            }))}
           </tbody>
         </table>
       </div>

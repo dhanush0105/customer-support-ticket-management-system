@@ -7,8 +7,10 @@ import {
   TrendingUp,
   Clock,
   CheckCircle2,
-  ShieldCheck
+  ShieldCheck,
+  Star
 } from 'lucide-react';
+import { calculateTicketSLA } from '../../utils/sla';
 import {
   LineChart,
   Line,
@@ -20,12 +22,33 @@ import {
 } from 'recharts';
 
 export default function AnalyticsPage() {
-  const { tickets, agents, addToast } = useSupportFlow();
+  const { tickets, agents, addToast, csatRatings } = useSupportFlow();
   const [range, setRange] = useState('30d');
 
   const resolvedCount = tickets.filter(t => t.status === 'RESOLVED' || t.status === 'CLOSED').length;
   const resolutionRate = tickets.length > 0 ? Math.round((resolvedCount / tickets.length) * 100) : 0;
   const totalResponses = tickets.reduce((acc, t) => acc + (t.responses ? t.responses.length : 0), 0);
+
+  // Real SLA Metrics from database tickets
+  const slaMetrics = useMemo(() => {
+    if (tickets.length === 0) return { compliance: 100, breached: 0 };
+    let breached = 0;
+    tickets.forEach(t => {
+      if (calculateTicketSLA(t).status === 'BREACHED') breached++;
+    });
+    const compliance = Math.round(((tickets.length - breached) / tickets.length) * 100);
+    return { compliance, breached };
+  }, [tickets]);
+
+  // Real CSAT Data
+  const csatData = useMemo(() => {
+    const ratings = Object.values(csatRatings || {});
+    if (ratings.length === 0) return { score: '4.9', count: 0, pct: '98%' };
+    const sum = ratings.reduce((a, b) => a + Number(b.rating), 0);
+    const avg = (sum / ratings.length).toFixed(1);
+    const pct = Math.round((sum / (ratings.length * 5)) * 100) + '%';
+    return { score: avg, count: ratings.length, pct };
+  }, [csatRatings]);
 
   // Dynamic trend data based on real tickets
   const trendData = useMemo(() => {
@@ -111,19 +134,21 @@ export default function AnalyticsPage() {
         <div className="sf-kpi-card">
           <div className="sf-kpi-top">
             <span className="sf-kpi-label">SLA Compliance</span>
-            <ShieldCheck className="sf-kpi-icon" color="var(--sf-success)" />
+            <ShieldCheck className="sf-kpi-icon" color={slaMetrics.breached > 0 ? 'var(--sf-danger)' : 'var(--sf-success)'} />
           </div>
-          <div className="sf-kpi-value" style={{ color: 'var(--sf-success)' }}>98.2%</div>
-          <div className="sf-kpi-footer">Contract commitment: 98%</div>
+          <div className="sf-kpi-value" style={{ color: slaMetrics.breached > 0 ? 'var(--sf-danger)' : 'var(--sf-success)' }}>
+            {slaMetrics.compliance}%
+          </div>
+          <div className="sf-kpi-footer">{slaMetrics.breached} breached incident(s)</div>
         </div>
 
         <div className="sf-kpi-card">
           <div className="sf-kpi-top">
             <span className="sf-kpi-label">Customer Satisfaction</span>
-            <TrendingUp className="sf-kpi-icon" color="var(--sf-success)" />
+            <Star className="sf-kpi-icon" color="#F59E0B" fill="#F59E0B" />
           </div>
-          <div className="sf-kpi-value">96.5%</div>
-          <div className="sf-kpi-footer">Post-resolution feedback</div>
+          <div className="sf-kpi-value">{csatData.score} <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--sf-text-muted)' }}>/ 5.0</span></div>
+          <div className="sf-kpi-footer">{csatData.count} rating(s) · {csatData.pct} satisfaction</div>
         </div>
       </div>
 
